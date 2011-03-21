@@ -1,0 +1,211 @@
+<project name="zoho" default="package">
+
+	<property name="alf.src.dir" location="../alf-src" />
+	<property name="work.dir" value="work" />
+	<property name="bin.dir" location="${work.dir}/bin" />
+	<property name="lib.dir" location="lib" />
+	<property name="dist.dir" location="dist" />
+
+	<property name="alf.lib.dir" location="${alf.src.dir}/projects/web-client/build/assemble/WEB-INF/lib/" />
+	<property name="yui-compressor" location="${alf.src.dir}/projects/3rd-party/lib/devenv/yuicompressor-2.4.2.jar" />
+
+	<property name="explorer.src.dir" location="src-explorer"/>
+	<property name="explorer.jar.filename" value="explorer-zoho.jar" />
+	<property name="explorer.config.dir" value="config-explorer" />
+	<property name="explorer.amp.dir" location="amp-explorer" />
+	<property name="explorer.amp.filename" value="explorer-zoho.amp" />
+
+	<property name="share.src.dir" location="src-share"/>
+	<property name="share.jar.filename" value="share-zoho.jar" />
+	<property name="share.config.dir" value="config-share" />
+	<property name="share.amp.dir" location="amp-share" />
+	<property name="share.amp.filename" value="share-zoho.amp" />
+	
+	<property name="ZiaAlfresco.dir" location="../ZiaAlfresco"/>
+
+
+	<taskdef resource="net/sf/antcontrib/antcontrib.properties">
+		<classpath>
+			<pathelement location="${basedir}/antlib/ant-contrib-1.0b3.jar"/>
+		</classpath>
+	</taskdef>
+	
+	<buildnumber file="${basedir}/ant.build" />
+
+	<target name="setup">
+		<delete dir="${bin.dir}" />
+		<delete dir="${work.dir}" />
+		<mkdir dir="${bin.dir}" />
+		<mkdir dir="${lib.dir}" />
+		<mkdir dir="${work.dir}" />
+		<mkdir dir="${dist.dir}" />
+	</target>
+
+	<target name="clean">
+		<delete dir="${bin.dir}" />
+		<delete dir="${work.dir}" />
+		<delete dir="${dist.dir}" />
+	</target>
+	
+	<target name="build-explorer-dependencies" depends="setup">
+		<ant antfile="${ZiaAlfresco.dir}/build.xml" dir="${ZiaAlfresco.dir}" target="compile" inheritall="false">
+			<property name="alf.lib.dir" value="${alf.lib.dir}" />
+		</ant>
+	</target>
+
+
+	<target name="compile-explorer" depends="setup,build-explorer-dependencies">
+		<javac srcdir="${explorer.src.dir}" destdir="${bin.dir}" debug="on">
+			<classpath>
+				<fileset dir="${alf.lib.dir}">
+					<include name="*.jar" />
+				</fileset>
+				<fileset dir="${lib.dir}">
+					<include name="*.jar" />
+				</fileset>
+				<pathelement path="${ZiaAlfresco.dir}/build/classes"/>
+			</classpath>
+		</javac>
+	</target>
+
+	<target name="compile-share" depends="setup">
+		<javac srcdir="${basedir}/src-share" destdir="${bin.dir}" debug="on">
+			<classpath>
+				<fileset dir="${alf.lib.dir}">
+					<include name="*.jar" />
+				</fileset>
+			</classpath>
+		</javac>
+	</target>
+	
+	<target name="package" description="Package both AMPS, tag the repository">
+		<antcall target="package-share" />
+		<delete dir="${work.dir}" />
+		<antcall target="package-explorer" />
+		<delete dir="${work.dir}" />
+		<antcall target="tag-git" />
+	</target>
+
+	<target name="package-explorer" depends="compile-explorer">
+		<package-amp-impl amp-name="${explorer.amp.filename}" config-directory="${explorer.config.dir}" 
+			jar-name="${explorer.jar.filename}" module-properties="${explorer.amp.dir}/module.properties" 
+			lib-directory="${lib.dir}" web-directory="web-explorer" />
+	</target>
+
+	<target name="package-share" depends="compile-share">
+		<package-amp-impl amp-name="${share.amp.filename}" config-directory="${share.config.dir}" 
+					jar-name="${share.jar.filename}" module-properties="${share.amp.dir}/module.properties" 
+					lib-directory="${lib.dir}" web-directory="web-share" />
+	</target>
+
+	<target name="compress-js" description="Compress the javascript">
+		<echo>Compressing Javascript</echo>
+		<apply executable="java" parallel="false" dest="${work.dir}/web/">
+			<fileset dir="${work.dir}/web/">
+				<include name="**/*.js" />
+			</fileset>
+			<arg line="-jar" />
+			<arg path="${yui-compressor}" />
+			<arg line="-o" />
+			<targetfile />
+			<srcfile />
+			<mapper type="glob" from="*.js" to="*-min.js" />
+		</apply>
+	</target>
+	
+	<target name="tag-git">
+		<echo message="Tagging as v${build.number}"/>
+		<exec executable="git" dir="${basedir}">
+			<arg value="tag" />
+			<arg value="-a" />
+			<arg value="-m &quot;Tagging build with v.${build.number}&quot;" />
+			<arg value="v${build.number}" />
+		</exec>
+		<exec executable="git" dir="${basedir}">
+			<arg value="push"/>
+			<arg value="--tags"/>
+		</exec>
+	</target>
+
+	<macrodef name="package-amp-impl">
+		<attribute name="module-properties" />
+		<attribute name="config-directory" />
+		<attribute name="web-directory" default="" />
+		<attribute name="jar-name" />
+		<attribute name="amp-name" />
+		<attribute name="lib-directory" default=""/>
+		<sequential>
+			<!-- Make AMP Structure -->
+			<mkdir dir="${work.dir}/config" />
+			<mkdir dir="${work.dir}/lib" />
+			<mkdir dir="${work.dir}/web" />
+
+			<!-- Copy in files -->
+			<!-- config dir -->
+			<copy todir="${work.dir}/config/">
+				<fileset dir="${basedir}/@{config-directory}">
+					<exclude name="**/*~" />
+					<exclude name="**/.gitignore"/>
+					<!-- 
+								Amps should not include the global.properties which is machine specific.  This is only for development.
+							-->
+					<exclude name="**/alfresco-global.properties"/>
+					<exclude name="**/log4j.properties"/>
+					<exclude name="**/extension/license/"/>
+					<exclude name="**/extension/templates/alf_data/"/>
+				</fileset>
+			</copy>
+
+			<!-- lib dir -->
+			<if>
+				<not>
+					<equals arg1="@{lib-directory}" arg2=""/>
+				</not>
+				<then>
+					<copy todir="${work.dir}/lib/" failonerror="false">
+						<fileset dir="@{lib-directory}">
+							<exclude name="**/*~" />
+							<exclude name="**/.gitignore"/>
+							<exclude name="**/*-src.zip"/>
+							<exclude name="**/*-javadoc.jar"/>
+						</fileset>
+					</copy>
+				</then>
+			</if>
+
+			<!-- web dir -->
+			<if>
+				<not>
+					<equals arg1="@{web-directory}" arg2=""/>
+				</not>
+				<then>
+					<copy todir="${work.dir}/web/" failonerror="false">
+						<fileset dir="${basedir}/@{web-directory}">
+							<exclude name="**/*~" />
+							<exclude name="**/.gitignore"/>
+						</fileset>
+					</copy>
+				</then>
+			</if>
+
+			<antcall target="compress-js"/>
+
+			<!-- copy over the java code -->
+			<jar destfile="${work.dir}/lib/@{jar-name}">
+				<fileset dir="${bin.dir}" includes="com/**" />
+			</jar>
+			<delete dir="${bin.dir}" />
+
+			<!-- copy the properties file -->
+			<copy file="@{module-properties}" tofile="${work.dir}/module.properties" />
+			
+			<!-- Replace special token in module.properties -->
+			<replace casesensitive="true" file="${work.dir}/module.properties" token="VERSION_STRING" value="${build.number}" />
+
+			<!-- make the amp -->
+			<zip destfile="${dist.dir}/@{amp-name}" basedir="${work.dir}" />
+			<echo message="Created amp @{amp-name}" />
+		</sequential>
+	</macrodef>
+
+</project>

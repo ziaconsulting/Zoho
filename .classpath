@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" output="build/classes/explorer" path="src-explorer"/>
+	<classpathentry kind="src" output="build/classes/share" path="src-share"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/ZiaAlfresco"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/Core"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/Remote API"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/Web-Client"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/3rd Party"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/Web Service Client"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/Enterprise 3rd Party"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/Enterprise JMX Dumper"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/Enterprise Remote API"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/Enterprise Repository"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/Repository"/>
+	<classpathentry exported="true" kind="lib" path="lib/AdvRemoteAgent.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/AdvWmsCommon.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/json.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

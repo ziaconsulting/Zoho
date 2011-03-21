@@ -1,0 +1,9 @@
+bin/*
+work/*
+dist/*
+!.gitignore
+lib/ZiaAlfresco.jar
+jetty/logs/*
+!jetty/logs/.gitignore
+jetty/tmp/*
+!jetty/tmp/.gitignore

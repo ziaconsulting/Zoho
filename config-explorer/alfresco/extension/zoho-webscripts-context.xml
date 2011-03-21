@@ -1,0 +1,70 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!--
+  Copyright (c) 2011 Zia Consulting
+  
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+  
+  The above copyright notice and this permission notice shall be included in
+  all copies or substantial portions of the Software.
+  
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+  THE SOFTWARE.
+-->
+<!DOCTYPE beans PUBLIC '-//SPRING//DTD BEAN//EN' 'http://www.springframework.org/dtd/spring-beans-2.0.dtd'>
+
+<beans>
+	<bean id="remoteAgent" class="com.ziaconsulting.zoho.RemoteAgentWrapper"
+		scope="singleton" init-method="initialize">
+		<property name="confFileProperties">
+			<bean
+				class="org.springframework.beans.factory.config.PropertiesFactoryBean">
+				<property name="location"
+					value="classpath:alfresco/extension/zoho-remote-conf.properties"/>
+			</bean>
+		</property>
+		<property name="agentName" value="${zoho.agentname}"/>
+		<property name="agentPassword" value="${zoho.agentpasswd}"/>
+		<property name="ssl" value="${zoho.ssl}"/>
+	</bean>
+
+	<bean id="zohoPropertyConfigurer"
+		class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="location">
+			<value>classpath:alfresco/extension/zoho-remote-conf.properties</value>
+		</property>
+		<property name="placeholderPrefix" value="$zoho{" />
+	</bean>
+	
+	<bean id="remoteAdapterImpl" class="com.ziaconsulting.zoho.RemoteAdapterImpl">
+		<property name="serviceRegistry" ref="ServiceRegistry"/>
+	</bean>
+
+
+	<bean id="webscript.com.ziaconsulting.zohocontroller.get" class="com.ziaconsulting.zoho.EditorController"
+		parent="webscript" init-method="initialize">
+		<property name="remoteAgentName" value="${zoho.agentname}"/>
+		<property name="apiKey" value="${zoho.apikey}"/>
+		<property name="saveUrl" value="${zoho.saveDomain}"/>
+		<property name="useRemoteAgent" value="${zoho.useRemoteAgent}"/>
+		<property name="sheetUrl" value="$zoho{sheet}"/>
+		<property name="showUrl" value="$zoho{show}"/>
+		<property name="writerUrl" value="$zoho{writer}"/>
+		<property name="skey" value="${zoho.skey}"/>
+		<property name="serviceRegistry" ref="ServiceRegistry"/>
+	</bean>
+
+	<bean id="webscript.com.ziaconsulting.zohosave.post" class="com.ziaconsulting.zoho.ZohoSaveController"
+		parent="webscript">
+		<property name="serviceRegistry" ref="ServiceRegistry"/>
+	</bean>
+</beans>
